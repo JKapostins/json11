@@ -1,0 +1,13 @@
+cmake_minimum_required (VERSION 3.7.0)
+set(PUBLIC_CODE_FILES
+Public/json11/json11.hpp
+)
+
+set(PRIVATE_CODE_FILES
+Private/json11.cpp
+)
+
+set(CODE_FILES ${PUBLIC_CODE_FILES} ${PRIVATE_CODE_FILES})
+
+SOURCE_GROUP(Public FILES ${PUBLIC_CODE_FILES})
+SOURCE_GROUP(Private FILES ${PRIVATE_CODE_FILES})
