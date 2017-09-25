@@ -56,6 +56,8 @@
 #include <memory>
 #include <initializer_list>
 
+#include "json11/Module.h"
+
 #ifdef _MSC_VER
     #if _MSC_VER <= 1800 // VS 2013
         #ifndef noexcept
@@ -88,18 +90,18 @@ public:
     typedef std::map<std::string, Json> object;
 
     // Constructors for the various types of JSON value.
-    Json() noexcept;                // NUL
-    Json(std::nullptr_t) noexcept;  // NUL
-    Json(double value);             // NUMBER
-    Json(int value);                // NUMBER
-    Json(bool value);               // BOOL
-    Json(const std::string &value); // STRING
-    Json(std::string &&value);      // STRING
-    Json(const char * value);       // STRING
-    Json(const array &values);      // ARRAY
-    Json(array &&values);           // ARRAY
-    Json(const object &values);     // OBJECT
-    Json(object &&values);          // OBJECT
+	JSON11_API Json() noexcept;                // NUL
+	JSON11_API Json(std::nullptr_t) noexcept;  // NUL
+	JSON11_API Json(double value);             // NUMBER
+    JSON11_API Json(int value);                // NUMBER
+    JSON11_API Json(bool value);               // BOOL
+    JSON11_API Json(const std::string &value); // STRING
+    JSON11_API Json(std::string &&value);      // STRING
+    JSON11_API Json(const char * value);       // STRING
+    JSON11_API Json(const array &values);      // ARRAY
+    JSON11_API Json(array &&values);           // ARRAY
+    JSON11_API Json(const object &values);     // OBJECT
+    JSON11_API Json(object &&values);          // OBJECT
 
     // Implicit constructor: anything with a to_json() function.
     template <class T, class = decltype(&T::to_json)>
@@ -120,41 +122,41 @@ public:
 
     // This prevents Json(some_pointer) from accidentally producing a bool. Use
     // Json(bool(some_pointer)) if that behavior is desired.
-    Json(void *) = delete;
+	JSON11_API Json(void *) = delete;
 
     // Accessors
-    Type type() const;
+	JSON11_API Type type() const;
 
-    bool is_null()   const { return type() == NUL; }
-    bool is_number() const { return type() == NUMBER; }
-    bool is_bool()   const { return type() == BOOL; }
-    bool is_string() const { return type() == STRING; }
-    bool is_array()  const { return type() == ARRAY; }
-    bool is_object() const { return type() == OBJECT; }
+    JSON11_API bool is_null()   const { return type() == NUL; }
+    JSON11_API bool is_number() const { return type() == NUMBER; }
+    JSON11_API bool is_bool()   const { return type() == BOOL; }
+    JSON11_API bool is_string() const { return type() == STRING; }
+    JSON11_API bool is_array()  const { return type() == ARRAY; }
+    JSON11_API bool is_object() const { return type() == OBJECT; }
 
     // Return the enclosed value if this is a number, 0 otherwise. Note that json11 does not
     // distinguish between integer and non-integer numbers - number_value() and int_value()
     // can both be applied to a NUMBER-typed object.
-    double number_value() const;
-    int int_value() const;
+	JSON11_API double number_value() const;
+	JSON11_API int int_value() const;
 
     // Return the enclosed value if this is a boolean, false otherwise.
-    bool bool_value() const;
+	JSON11_API bool bool_value() const;
     // Return the enclosed string if this is a string, "" otherwise.
-    const std::string &string_value() const;
+	JSON11_API const std::string &string_value() const;
     // Return the enclosed std::vector if this is an array, or an empty vector otherwise.
-    const array &array_items() const;
+	JSON11_API const array &array_items() const;
     // Return the enclosed std::map if this is an object, or an empty map otherwise.
-    const object &object_items() const;
+	JSON11_API const object &object_items() const;
 
     // Return a reference to arr[i] if this is an array, Json() otherwise.
-    const Json & operator[](size_t i) const;
+	JSON11_API const Json & operator[](size_t i) const;
     // Return a reference to obj[key] if this is an object, Json() otherwise.
-    const Json & operator[](const std::string &key) const;
+	JSON11_API const Json & operator[](const std::string &key) const;
 
     // Serialize.
-    void dump(std::string &out) const;
-    std::string dump() const {
+	JSON11_API void dump(std::string &out) const;
+	JSON11_API std::string dump() const {
         std::string out;
         dump(out);
         return out;
@@ -189,12 +191,12 @@ public:
         return parse_multi(in, parser_stop_pos, err, strategy);
     }
 
-    bool operator== (const Json &rhs) const;
-    bool operator<  (const Json &rhs) const;
-    bool operator!= (const Json &rhs) const { return !(*this == rhs); }
-    bool operator<= (const Json &rhs) const { return !(rhs < *this); }
-    bool operator>  (const Json &rhs) const { return  (rhs < *this); }
-    bool operator>= (const Json &rhs) const { return !(*this < rhs); }
+    JSON11_API bool operator== (const Json &rhs) const;
+    JSON11_API bool operator<  (const Json &rhs) const;
+    JSON11_API bool operator!= (const Json &rhs) const { return !(*this == rhs); }
+    JSON11_API bool operator<= (const Json &rhs) const { return !(rhs < *this); }
+    JSON11_API bool operator>  (const Json &rhs) const { return  (rhs < *this); }
+    JSON11_API bool operator>= (const Json &rhs) const { return !(*this < rhs); }
 
     /* has_shape(types, err)
      *
@@ -202,7 +204,7 @@ public:
      * the given type. If not, return false and set err to a descriptive message.
      */
     typedef std::initializer_list<std::pair<std::string, Type>> shape;
-    bool has_shape(const shape & types, std::string & err) const;
+	JSON11_API bool has_shape(const shape & types, std::string & err) const;
 
 private:
     std::shared_ptr<JsonValue> m_ptr;

@@ -1,6 +1,7 @@
 cmake_minimum_required (VERSION 3.7.0)
 set(PUBLIC_CODE_FILES
 Public/json11/json11.hpp
+Public/json11/Module.h
 )
 
 set(PRIVATE_CODE_FILES

@@ -2,10 +2,10 @@
 
 #if defined(GNARLY_SHARED)
 #if defined(JSON11_EXPORT)
-#define JASON11_API __declspec(dllexport)
+#define JSON11_API __declspec(dllexport)
 #else
-#define JASON11_API __declspec(dllimport)
+#define JSON11_API __declspec(dllimport)
 #endif
 #else
-#define JASON11_API
+#define JSON11_API
 #endif
