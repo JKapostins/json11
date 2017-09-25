@@ -226,9 +226,9 @@ public:
  * Static globals - static-init-safe
  */
 struct Statics {
-	const std::shared_ptr<JsonValue> null = std::shared_ptr<JsonNull>(new(GLOBAL_ARENA) JsonNull(), [](JsonNull* ptr) { deleteObject(GLOBAL_ARENA, ptr); });
-    const std::shared_ptr<JsonValue> t = std::shared_ptr<JsonBoolean>(new(GLOBAL_ARENA) JsonBoolean(true), [](JsonBoolean* ptr) { deleteObject(GLOBAL_ARENA, ptr); });
-    const std::shared_ptr<JsonValue> f = std::shared_ptr<JsonBoolean>(new(GLOBAL_ARENA) JsonBoolean(false), [](JsonBoolean* ptr) { deleteObject(GLOBAL_ARENA, ptr); });
+	const std::shared_ptr<JsonValue> null = std::shared_ptr<JsonNull>(new(STATIC_ARENA) JsonNull(), [](JsonNull* ptr) { deleteObject(STATIC_ARENA, ptr); });
+    const std::shared_ptr<JsonValue> t = std::shared_ptr<JsonBoolean>(new(STATIC_ARENA) JsonBoolean(true), [](JsonBoolean* ptr) { deleteObject(STATIC_ARENA, ptr); });
+    const std::shared_ptr<JsonValue> f = std::shared_ptr<JsonBoolean>(new(STATIC_ARENA) JsonBoolean(false), [](JsonBoolean* ptr) { deleteObject(STATIC_ARENA, ptr); });
     const string empty_string;
     const vector<Json> empty_vector;
     const map<string, Json> empty_map;
