@@ -32,6 +32,7 @@ namespace engine
 	int ShutDown()
 	{
 		core::shutdown();
+		gnarly_assert_message(arenaLeakedMemory(GLOBAL_ARENA) == false, "GLOBAL_ARENA leaked memory!");
 		return g_returnCode;
 	}
 }

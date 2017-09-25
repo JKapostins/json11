@@ -21,6 +21,7 @@
 
 #include "json11/json11.hpp"
 #include <cassert>
+#include <Core/Memory/IMemoryArena.h>
 #include <cmath>
 #include <cstdlib>
 #include <cstdio>
@@ -30,12 +31,11 @@ namespace json11 {
 
 static const int max_depth = 200;
 
-using std::string;
-using std::vector;
-using std::map;
+using eastl::string;
+using eastl::vector;
+using eastl::map;
 using std::make_shared;
 using std::initializer_list;
-using std::move;
 
 /* Helper for representing null - just a do-nothing struct, plus comparison
  * operators so the helpers in JsonValue work. We can't use nullptr_t because
@@ -151,7 +151,7 @@ protected:
 
     // Constructors
     explicit Value(const T &value) : m_value(value) {}
-    explicit Value(T &&value)      : m_value(move(value)) {}
+    explicit Value(T &&value)      : m_value(eastl::move(value)) {}
 
     // Get type tag
     Json::Type type() const override {
@@ -198,7 +198,7 @@ class JsonString final : public Value<Json::STRING, string> {
     const string &string_value() const override { return m_value; }
 public:
     explicit JsonString(const string &value) : Value(value) {}
-    explicit JsonString(string &&value)      : Value(move(value)) {}
+    explicit JsonString(string &&value)      : Value(eastl::move(value)) {}
 };
 
 class JsonArray final : public Value<Json::ARRAY, Json::array> {
@@ -214,7 +214,7 @@ class JsonObject final : public Value<Json::OBJECT, Json::object> {
     const Json & operator[](const string &key) const override;
 public:
     explicit JsonObject(const Json::object &value) : Value(value) {}
-    explicit JsonObject(Json::object &&value)      : Value(move(value)) {}
+    explicit JsonObject(Json::object &&value)      : Value(eastl::move(value)) {}
 };
 
 class JsonNull final : public Value<Json::NUL, NullStruct> {
@@ -226,9 +226,9 @@ public:
  * Static globals - static-init-safe
  */
 struct Statics {
-    const std::shared_ptr<JsonValue> null = make_shared<JsonNull>();
-    const std::shared_ptr<JsonValue> t = make_shared<JsonBoolean>(true);
-    const std::shared_ptr<JsonValue> f = make_shared<JsonBoolean>(false);
+	const std::shared_ptr<JsonValue> null = std::shared_ptr<JsonNull>(new(GLOBAL_ARENA) JsonNull(), [](JsonNull* ptr) { deleteObject(GLOBAL_ARENA, ptr); });
+    const std::shared_ptr<JsonValue> t = std::shared_ptr<JsonBoolean>(new(GLOBAL_ARENA) JsonBoolean(true), [](JsonBoolean* ptr) { deleteObject(GLOBAL_ARENA, ptr); });
+    const std::shared_ptr<JsonValue> f = std::shared_ptr<JsonBoolean>(new(GLOBAL_ARENA) JsonBoolean(false), [](JsonBoolean* ptr) { deleteObject(GLOBAL_ARENA, ptr); });
     const string empty_string;
     const vector<Json> empty_vector;
     const map<string, Json> empty_map;
@@ -249,19 +249,19 @@ static const Json & static_null() {
 /* * * * * * * * * * * * * * * * * * * *
  * Constructors
  */
-
+//new(GLOBAL_ARENA) JsonObject(values), [](JsonObject* ptr) { deleteObject(GLOBAL_ARENA, ptr); }
 Json::Json() noexcept                  : m_ptr(statics().null) {}
 Json::Json(std::nullptr_t) noexcept    : m_ptr(statics().null) {}
-Json::Json(double value)               : m_ptr(make_shared<JsonDouble>(value)) {}
-Json::Json(int value)                  : m_ptr(make_shared<JsonInt>(value)) {}
+Json::Json(double value)               : m_ptr(new(GLOBAL_ARENA) JsonDouble(value), [](JsonDouble* ptr) { deleteObject(GLOBAL_ARENA, ptr); }) {}
+Json::Json(int value)                  : m_ptr(new(GLOBAL_ARENA) JsonInt(value), [](JsonInt* ptr) { deleteObject(GLOBAL_ARENA, ptr); }) {}
 Json::Json(bool value)                 : m_ptr(value ? statics().t : statics().f) {}
-Json::Json(const string &value)        : m_ptr(make_shared<JsonString>(value)) {}
-Json::Json(string &&value)             : m_ptr(make_shared<JsonString>(move(value))) {}
-Json::Json(const char * value)         : m_ptr(make_shared<JsonString>(value)) {}
-Json::Json(const Json::array &values)  : m_ptr(make_shared<JsonArray>(values)) {}
-Json::Json(Json::array &&values)       : m_ptr(make_shared<JsonArray>(move(values))) {}
-Json::Json(const Json::object &values) : m_ptr(make_shared<JsonObject>(values)) {}
-Json::Json(Json::object &&values)      : m_ptr(make_shared<JsonObject>(move(values))) {}
+Json::Json(const string &value)        : m_ptr(new(GLOBAL_ARENA) JsonString(value), [](JsonString* ptr) { deleteObject(GLOBAL_ARENA, ptr); }) {}
+Json::Json(string &&value)             : m_ptr(new(GLOBAL_ARENA) JsonString(eastl::move(value)), [](JsonString* ptr) { deleteObject(GLOBAL_ARENA, ptr); }) {}
+Json::Json(const char * value)         : m_ptr(new(GLOBAL_ARENA) JsonString(value), [](JsonString* ptr) { deleteObject(GLOBAL_ARENA, ptr); }) {}
+Json::Json(const Json::array &values)  : m_ptr(new(GLOBAL_ARENA) JsonArray(values), [](JsonArray* ptr) { deleteObject(GLOBAL_ARENA, ptr); }) {}
+Json::Json(Json::array &&values)       : m_ptr(new(GLOBAL_ARENA) JsonArray(eastl::move(values)), [](JsonArray* ptr) { deleteObject(GLOBAL_ARENA, ptr); }) {}
+Json::Json(const Json::object &values) : m_ptr(new(GLOBAL_ARENA) JsonObject(values), [](JsonObject* ptr) { deleteObject(GLOBAL_ARENA, ptr); }) {}
+Json::Json(Json::object &&values)      : m_ptr(new(GLOBAL_ARENA) JsonObject(eastl::move(values)), [](JsonObject* ptr) { deleteObject(GLOBAL_ARENA, ptr); }) {}
 
 /* * * * * * * * * * * * * * * * * * * *
  * Accessors
@@ -359,13 +359,13 @@ struct JsonParser final {
      * Mark this parse as failed.
      */
     Json fail(string &&msg) {
-        return fail(move(msg), Json());
+        return fail(eastl::move(msg), Json());
     }
 
     template <typename T>
     T fail(string &&msg, const T err_ret) {
         if (!failed)
-            err = std::move(msg);
+            err = eastl::move(msg);
         failed = true;
         return err_ret;
     }
@@ -512,7 +512,7 @@ struct JsonParser final {
                 // Extract 4-byte escape sequence
                 string esc = str.substr(i, 4);
                 // Explicitly check length of the substring. The following loop
-                // relies on std::string returning the terminating NUL when
+                // relies on eastl::string returning the terminating NUL when
                 // accessing str[length]. Checking here reduces brittleness.
                 if (esc.length() < 4) {
                     return fail("bad \\u escape: " + esc, "");
@@ -685,7 +685,7 @@ struct JsonParser final {
                 if (ch != ':')
                     return fail("expected ':' in object, got " + esc(ch));
 
-                data[std::move(key)] = parse_json(depth + 1);
+                data[eastl::move(key)] = parse_json(depth + 1);
                 if (failed)
                     return Json();
 
@@ -745,7 +745,7 @@ Json Json::parse(const string &in, string &err, JsonParse strategy) {
 
 // Documented in json11.hpp
 vector<Json> Json::parse_multi(const string &in,
-                               std::string::size_type &parser_stop_pos,
+                               eastl::string::size_type &parser_stop_pos,
                                string &err,
                                JsonParse strategy) {
     JsonParser parser { in, 0, err, false, strategy };

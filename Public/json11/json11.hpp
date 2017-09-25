@@ -3,12 +3,12 @@
  * json11 is a tiny JSON library for C++11, providing JSON parsing and serialization.
  *
  * The core object provided by the library is json11::Json. A Json object represents any JSON
- * value: null, bool, number (int or double), string (std::string), array (std::vector), or
- * object (std::map).
+ * value: null, bool, number (int or double), string (eastl::string), array (eastl::vector), or
+ * object (eastl::map).
  *
  * Json objects act like values: they can be assigned, copied, moved, compared for equality or
  * order, etc. There are also helper methods Json::dump, to serialize a Json to a string, and
- * Json::parse (static) to parse a std::string as a Json object.
+ * Json::parse (static) to parse a eastl::string as a Json object.
  *
  * Internally, the various types of Json object are represented by the JsonValue class
  * hierarchy.
@@ -50,9 +50,9 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-#include <map>
+#include <EASTL/string.h>
+#include <EASTL/vector.h>
+#include <EASTL/map.h>
 #include <memory>
 #include <initializer_list>
 
@@ -86,8 +86,8 @@ public:
     };
 
     // Array and object typedefs
-    typedef std::vector<Json> array;
-    typedef std::map<std::string, Json> object;
+    typedef eastl::vector<Json> array;
+    typedef eastl::map<eastl::string, Json> object;
 
     // Constructors for the various types of JSON value.
 	JSON11_API Json() noexcept;                // NUL
@@ -95,8 +95,8 @@ public:
 	JSON11_API Json(double value);             // NUMBER
     JSON11_API Json(int value);                // NUMBER
     JSON11_API Json(bool value);               // BOOL
-    JSON11_API Json(const std::string &value); // STRING
-    JSON11_API Json(std::string &&value);      // STRING
+    JSON11_API Json(const eastl::string &value); // STRING
+    JSON11_API Json(eastl::string &&value);      // STRING
     JSON11_API Json(const char * value);       // STRING
     JSON11_API Json(const array &values);      // ARRAY
     JSON11_API Json(array &&values);           // ARRAY
@@ -107,16 +107,16 @@ public:
     template <class T, class = decltype(&T::to_json)>
     Json(const T & t) : Json(t.to_json()) {}
 
-    // Implicit constructor: map-like objects (std::map, std::unordered_map, etc)
-    template <class M, typename std::enable_if<
-        std::is_constructible<std::string, decltype(std::declval<M>().begin()->first)>::value
-        && std::is_constructible<Json, decltype(std::declval<M>().begin()->second)>::value,
+    // Implicit constructor: map-like objects (eastl::map, eastl::unordered_map, etc)
+    template <class M, typename eastl::enable_if<
+		eastl::is_constructible<eastl::string, decltype(eastl::declval<M>().begin()->first)>::value
+        && eastl::is_constructible<Json, decltype(eastl::declval<M>().begin()->second)>::value,
             int>::type = 0>
     Json(const M & m) : Json(object(m.begin(), m.end())) {}
 
-    // Implicit constructor: vector-like objects (std::list, std::vector, std::set, etc)
-    template <class V, typename std::enable_if<
-        std::is_constructible<Json, decltype(*std::declval<V>().begin())>::value,
+    // Implicit constructor: vector-like objects (std::list, eastl::vector, std::set, etc)
+    template <class V, typename eastl::enable_if<
+		eastl::is_constructible<Json, decltype(*eastl::declval<V>().begin())>::value,
             int>::type = 0>
     Json(const V & v) : Json(array(v.begin(), v.end())) {}
 
@@ -143,51 +143,51 @@ public:
     // Return the enclosed value if this is a boolean, false otherwise.
 	JSON11_API bool bool_value() const;
     // Return the enclosed string if this is a string, "" otherwise.
-	JSON11_API const std::string &string_value() const;
-    // Return the enclosed std::vector if this is an array, or an empty vector otherwise.
+	JSON11_API const eastl::string &string_value() const;
+    // Return the enclosed eastl::vector if this is an array, or an empty vector otherwise.
 	JSON11_API const array &array_items() const;
-    // Return the enclosed std::map if this is an object, or an empty map otherwise.
+    // Return the enclosed eastl::map if this is an object, or an empty map otherwise.
 	JSON11_API const object &object_items() const;
 
     // Return a reference to arr[i] if this is an array, Json() otherwise.
 	JSON11_API const Json & operator[](size_t i) const;
     // Return a reference to obj[key] if this is an object, Json() otherwise.
-	JSON11_API const Json & operator[](const std::string &key) const;
+	JSON11_API const Json & operator[](const eastl::string &key) const;
 
     // Serialize.
-	JSON11_API void dump(std::string &out) const;
-	JSON11_API std::string dump() const {
-        std::string out;
+	JSON11_API void dump(eastl::string &out) const;
+	JSON11_API eastl::string dump() const {
+        eastl::string out;
         dump(out);
         return out;
     }
 
     // Parse. If parse fails, return Json() and assign an error message to err.
-    static Json parse(const std::string & in,
-                      std::string & err,
+	JSON11_API static Json parse(const eastl::string & in,
+                      eastl::string & err,
                       JsonParse strategy = JsonParse::STANDARD);
-    static Json parse(const char * in,
-                      std::string & err,
+	JSON11_API static Json parse(const char * in,
+                      eastl::string & err,
                       JsonParse strategy = JsonParse::STANDARD) {
         if (in) {
-            return parse(std::string(in), err, strategy);
+            return parse(eastl::string(in), err, strategy);
         } else {
             err = "null input";
             return nullptr;
         }
     }
     // Parse multiple objects, concatenated or separated by whitespace
-    static std::vector<Json> parse_multi(
-        const std::string & in,
-        std::string::size_type & parser_stop_pos,
-        std::string & err,
+	JSON11_API static eastl::vector<Json> parse_multi(
+        const eastl::string & in,
+        eastl::string::size_type & parser_stop_pos,
+        eastl::string & err,
         JsonParse strategy = JsonParse::STANDARD);
 
-    static inline std::vector<Json> parse_multi(
-        const std::string & in,
-        std::string & err,
+	JSON11_API static inline eastl::vector<Json> parse_multi(
+        const eastl::string & in,
+        eastl::string & err,
         JsonParse strategy = JsonParse::STANDARD) {
-        std::string::size_type parser_stop_pos;
+        eastl::string::size_type parser_stop_pos;
         return parse_multi(in, parser_stop_pos, err, strategy);
     }
 
@@ -203,8 +203,8 @@ public:
      * Return true if this is a JSON object and, for each item in types, has a field of
      * the given type. If not, return false and set err to a descriptive message.
      */
-    typedef std::initializer_list<std::pair<std::string, Type>> shape;
-	JSON11_API bool has_shape(const shape & types, std::string & err) const;
+    typedef std::initializer_list<std::pair<eastl::string, Type>> shape;
+	JSON11_API bool has_shape(const shape & types, eastl::string & err) const;
 
 private:
     std::shared_ptr<JsonValue> m_ptr;
@@ -219,15 +219,15 @@ protected:
     virtual Json::Type type() const = 0;
     virtual bool equals(const JsonValue * other) const = 0;
     virtual bool less(const JsonValue * other) const = 0;
-    virtual void dump(std::string &out) const = 0;
+    virtual void dump(eastl::string &out) const = 0;
     virtual double number_value() const;
     virtual int int_value() const;
     virtual bool bool_value() const;
-    virtual const std::string &string_value() const;
+    virtual const eastl::string &string_value() const;
     virtual const Json::array &array_items() const;
     virtual const Json &operator[](size_t i) const;
     virtual const Json::object &object_items() const;
-    virtual const Json &operator[](const std::string &key) const;
+    virtual const Json &operator[](const eastl::string &key) const;
     virtual ~JsonValue() {}
 };
 
